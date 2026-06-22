@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 18% 95%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 150 20% 22%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 14% 91%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 40 10% 90%;
+    --muted-foreground: 0 0% 35%;
+    --accent: 28 45% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 8 55% 53%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 36 12% 82%;
+    --input: 36 12% 82%;
+    --ring: 150 20% 22%;
+    --radius: 0.5rem;
+
+    --gp-primary: #2E4237;
+    --gp-primary-light: #4A6754;
+    --gp-accent: #C8956C;
+    --gp-accent-hover: #B5825A;
+    --gp-bg: #F5F3EF;
+    --gp-bg-secondary: #EDE9E3;
+    --gp-bg-dark: #1A2E24;
+    --gp-text: #1A1A1A;
+    --gp-text-secondary: #5A5A5A;
+    --gp-text-muted: #8A8A8A;
+    --gp-border: #D4CFC8;
+    --gp-success: #4A7C59;
+    --gp-warning: #D4A843;
+    --gp-danger: #C45B4A;
+    --gp-info: #5B8DB8;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Instrument Serif', serif;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--gp-bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gp-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gp-text-muted);
+}
+
+html {
+  scroll-behavior: smooth;
+}
