@@ -109,6 +109,7 @@ Production webhook URL format:
 ```text
 https://your-domain.com/api/whatsapp/webhook
 https://your-domain.com/api/whatsapp/gupshup
+https://your-domain.com/api/gupshup
 ```
 
 Required environment variables:
@@ -132,7 +133,7 @@ GUPSHUP_WEBHOOK_TOKEN="choose-a-strong-random-string"
 For Gupshup, set the callback/webhook URL in the Gupshup dashboard to:
 
 ```text
-https://panchayat-management-system.vercel.app/api/whatsapp/gupshup
+https://panchayat-management-system.vercel.app/api/gupshup
 ```
 
 Villagers can send a normal WhatsApp text, image, file, audio, video, or location message. Text becomes the complaint description; media/location messages are registered with the available caption, link, or location details. If the sender's number is not already in citizen records, the app creates a minimal citizen intake record so the complaint is still accepted and staff can verify the citizen later.
