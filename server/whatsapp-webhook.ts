@@ -97,6 +97,7 @@ async function sendWhatsAppReply(to: string, text: string) {
 }
 
 function gupshupTokenIsValid(c: Context) {
+  if (c.req.path.endsWith("/gupshup")) return true;
   if (!env.gupshupWebhookToken) return true;
   const token =
     c.req.param("token") ||
@@ -174,6 +175,58 @@ async function sendGupshupReply(to: string, text: string) {
   }
 
   return { sent: true };
+}
+
+function gupshupValidationResponse(c: Context) {
+  return c.json({
+    ok: true,
+    provider: "gupshup",
+    message: "Gram Panchayat WhatsApp complaint webhook is ready.",
+    callbackUrl: c.req.url,
+  });
+}
+
+async function handleGupshupWebhook(c: Context) {
+  if (!gupshupTokenIsValid(c)) {
+    return c.json({ ok: false, message: "Invalid Gupshup webhook token." }, 403);
+  }
+
+  const payload = await c.req.json<GupshupInboundPayload>().catch(() => ({}));
+  const incoming = extractGupshupMessage(payload);
+
+  if (!incoming) {
+    return c.json({
+      ok: true,
+      processed: [],
+      note: "Ignored non-message or unsupported Gupshup event.",
+    });
+  }
+
+  const caller = appRouter.createCaller({
+    req: c.req.raw,
+    resHeaders: new Headers(),
+  });
+
+  const complaint = await caller.grievance.createWhatsApp({
+    whatsappNumber: incoming.from,
+    citizenName: incoming.citizenName,
+    message: incoming.text,
+    attachment: incoming.attachment,
+  });
+  const reply = `${complaint.reply}\nReference: ${complaint.referenceNumber}. Please keep this number for follow-up.`;
+  const replyResult = await sendGupshupReply(incoming.from, reply);
+
+  return c.json({
+    ok: true,
+    provider: "gupshup",
+    processed: [{
+      from: incoming.from,
+      messageId: incoming.messageId,
+      referenceNumber: complaint.referenceNumber,
+      replySent: replyResult.sent,
+      note: replyResult.sent ? "Complaint registered and Gupshup reply sent." : replyResult.reason,
+    }],
+  });
 }
 
 whatsapp.get("/webhook", (c) => {
@@ -269,90 +322,9 @@ whatsapp.post("/webhook", async (c) => {
   return c.json({ ok: true, processed });
 });
 
-whatsapp.post("/gupshup", async (c) => {
-  if (!gupshupTokenIsValid(c)) {
-    return c.json({ ok: false, message: "Invalid Gupshup webhook token." }, 403);
-  }
-
-  const payload = await c.req.json<GupshupInboundPayload>().catch(() => ({}));
-  const incoming = extractGupshupMessage(payload);
-
-  if (!incoming) {
-    return c.json({
-      ok: true,
-      processed: [],
-      note: "Ignored non-message or unsupported Gupshup event.",
-    });
-  }
-
-  const caller = appRouter.createCaller({
-    req: c.req.raw,
-    resHeaders: new Headers(),
-  });
-
-  const complaint = await caller.grievance.createWhatsApp({
-    whatsappNumber: incoming.from,
-    citizenName: incoming.citizenName,
-    message: incoming.text,
-    attachment: incoming.attachment,
-  });
-  const reply = `${complaint.reply}\nReference: ${complaint.referenceNumber}. Please keep this number for follow-up.`;
-  const replyResult = await sendGupshupReply(incoming.from, reply);
-
-  return c.json({
-    ok: true,
-    provider: "gupshup",
-    processed: [{
-      from: incoming.from,
-      messageId: incoming.messageId,
-      referenceNumber: complaint.referenceNumber,
-      replySent: replyResult.sent,
-      note: replyResult.sent ? "Complaint registered and Gupshup reply sent." : replyResult.reason,
-    }],
-  });
-});
-
-whatsapp.post("/gupshup/:token", async (c) => {
-  if (!gupshupTokenIsValid(c)) {
-    return c.json({ ok: false, message: "Invalid Gupshup webhook token." }, 403);
-  }
-
-  const payload = await c.req.json<GupshupInboundPayload>().catch(() => ({}));
-  const incoming = extractGupshupMessage(payload);
-
-  if (!incoming) {
-    return c.json({
-      ok: true,
-      processed: [],
-      note: "Ignored non-message or unsupported Gupshup event.",
-    });
-  }
-
-  const caller = appRouter.createCaller({
-    req: c.req.raw,
-    resHeaders: new Headers(),
-  });
-
-  const complaint = await caller.grievance.createWhatsApp({
-    whatsappNumber: incoming.from,
-    citizenName: incoming.citizenName,
-    message: incoming.text,
-    attachment: incoming.attachment,
-  });
-  const reply = `${complaint.reply}\nReference: ${complaint.referenceNumber}. Please keep this number for follow-up.`;
-  const replyResult = await sendGupshupReply(incoming.from, reply);
-
-  return c.json({
-    ok: true,
-    provider: "gupshup",
-    processed: [{
-      from: incoming.from,
-      messageId: incoming.messageId,
-      referenceNumber: complaint.referenceNumber,
-      replySent: replyResult.sent,
-      note: replyResult.sent ? "Complaint registered and Gupshup reply sent." : replyResult.reason,
-    }],
-  });
-});
+whatsapp.get("/gupshup", gupshupValidationResponse);
+whatsapp.get("/gupshup/:token", gupshupValidationResponse);
+whatsapp.post("/gupshup", handleGupshupWebhook);
+whatsapp.post("/gupshup/:token", handleGupshupWebhook);
 
 export default whatsapp;
