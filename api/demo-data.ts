@@ -5,7 +5,7 @@ type PageInput = {
   limit?: number;
 };
 
-export const isDemoMode = process.env.NODE_ENV !== "production" && !process.env.DATABASE_URL;
+export const isDemoMode = process.env.DEMO_MODE === "true" || (process.env.NODE_ENV !== "production" && !process.env.DATABASE_URL);
 
 export const demoUsers: Record<string, User> = {
   admin: {
