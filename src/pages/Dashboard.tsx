@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
-  Users, Shield, FileText, PieChart, TrendingUp, AlertCircle, Calendar, ArrowRight,
+  Users, Shield, FileText, PieChart, TrendingUp, AlertCircle, Calendar, ArrowRight, Sparkles,
   CheckCircle, Clock, Activity
 } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -31,6 +31,7 @@ export default function Dashboard() {
   const quickActions = [
     { label: "Add Citizen", icon: Users, path: "/records", roles: ["admin", "secretary"] },
     { label: "New Scheme", icon: Shield, path: "/schemes", roles: ["admin", "secretary"] },
+    { label: "Smart Services", icon: Sparkles, path: "/smart-services", roles: ["admin", "secretary", "citizen", "monitor"] },
     { label: "Schedule Meeting", icon: Calendar, path: "/meetings", roles: ["admin", "secretary"] },
     { label: "View Reports", icon: TrendingUp, path: "/reports", roles: ["admin", "monitor"] },
     { label: "View Finances", icon: PieChart, path: "/finances", roles: ["admin", "secretary", "monitor"] },

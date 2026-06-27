@@ -11,6 +11,7 @@ The system is designed for a production-style government service workflow: citiz
 | Citizen Services | Citizen records, household details, grievance filing, welfare scheme access, and meeting information |
 | Administration | Role-based access, account approval, suspended account handling, and operational dashboards |
 | Governance | Welfare schemes, Gram Sabha meetings, property tax records, financial summaries, and reporting |
+| Smart Village Modules | WhatsApp complaint intake, certificate workflow, MGNREGA attendance and wage tracking, SHG management, and domestic tax/payment overview |
 | Security | Password authentication, HTTP-only sessions, role protection, pending account verification, and audit logging |
 | Deployment | Production build, MySQL database support, environment-based configuration, and deployment checklist |
 
@@ -24,6 +25,8 @@ The system is designed for a production-style government service workflow: citiz
 - Welfare schemes with enrollment and budget tracking.
 - Property tax and financial management.
 - Public grievance submission and reference tracking.
+- WhatsApp-style complaint intake with automatic category detection, priority prediction, SLA due date, officer assignment, and CSV export.
+- Smart Services page for certificate applications, 100-days work scheme attendance/wages, Women Self Help Group project/loan tracking, and domestic tax payment status.
 - Meetings and Gram Sabha scheduling.
 - Reports and analytics for monitoring service delivery.
 - Local development mode with sample data when no database is configured.
@@ -87,6 +90,43 @@ cd "/Users/nareshramavath/Downloads/Gram Panchayat Management System/app"
 npm install
 npm run dev
 ```
+
+## Real WhatsApp Complaint Intake
+
+The backend exposes a WhatsApp Business Cloud API webhook that can receive villagers' WhatsApp messages and create complaints directly in the same grievance register used by the website.
+
+Webhook endpoints:
+
+```text
+GET  /api/whatsapp/webhook   Meta verification endpoint
+POST /api/whatsapp/webhook   Incoming WhatsApp messages
+GET  /api/whatsapp/status    Local configuration status
+```
+
+Production webhook URL format:
+
+```text
+https://your-domain.com/api/whatsapp/webhook
+```
+
+Required environment variables:
+
+```sh
+WHATSAPP_VERIFY_TOKEN="choose-a-strong-random-string"
+WHATSAPP_ACCESS_TOKEN="meta-whatsapp-cloud-api-token"
+WHATSAPP_PHONE_NUMBER_ID="meta-phone-number-id"
+WHATSAPP_API_VERSION="v21.0"
+```
+
+Flow:
+
+1. A villager sends a text complaint to the official Panchayat WhatsApp Business number.
+2. Meta sends the message to `/api/whatsapp/webhook`.
+3. The app matches the WhatsApp number to a citizen phone number, including Indian numbers sent as `91XXXXXXXXXX`.
+4. A grievance is created with source `whatsapp`, AI-style category, priority, SLA due date, and reference number.
+5. If WhatsApp credentials are configured, the villager receives an automatic reply with the complaint reference number.
+
+For production, configure the webhook in Meta Developer Console with the callback URL above and the same `WHATSAPP_VERIFY_TOKEN` value from your server environment.
 
 Open:
 

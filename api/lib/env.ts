@@ -14,4 +14,8 @@ export const env = {
   isProduction: process.env.NODE_ENV === "production",
   databaseUrl: required("DATABASE_URL"),
   ownerUnionId: process.env.OWNER_UNION_ID ?? "",
+  whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? "",
+  whatsappAccessToken: process.env.WHATSAPP_ACCESS_TOKEN ?? "",
+  whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? "",
+  whatsappApiVersion: process.env.WHATSAPP_API_VERSION ?? "v21.0",
 };

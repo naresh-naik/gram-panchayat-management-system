@@ -14,7 +14,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Landmark, Menu, Bell, User, LogOut, Shield, Users, FileText, PieChart, Home, MessageSquare, Calendar, UserCog } from "lucide-react";
+import { Landmark, Menu, Bell, User, LogOut, Shield, Users, FileText, PieChart, Home, MessageSquare, Calendar, UserCog, Sparkles } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -34,6 +34,7 @@ export default function Navbar() {
     { label: "Dashboard", path: "/dashboard", icon: Home, roles: ["admin", "secretary", "citizen", "monitor"] },
     { label: "Records", path: "/records", icon: FileText, roles: ["admin", "secretary"] },
     { label: "Schemes", path: "/schemes", icon: Shield, roles: ["admin", "secretary", "citizen", "monitor"] },
+    { label: "Smart Services", path: "/smart-services", icon: Sparkles, roles: ["admin", "secretary", "citizen", "monitor"] },
     { label: "Finances", path: "/finances", icon: PieChart, roles: ["admin", "secretary", "monitor"] },
     { label: "Meetings", path: "/meetings", icon: Calendar, roles: ["admin", "secretary", "citizen", "monitor"] },
     { label: "Reports", path: "/reports", icon: Users, roles: ["admin", "monitor"] },
