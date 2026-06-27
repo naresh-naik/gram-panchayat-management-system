@@ -99,6 +99,7 @@ async function sendWhatsAppReply(to: string, text: string) {
 function gupshupTokenIsValid(c: Context) {
   if (!env.gupshupWebhookToken) return true;
   const token =
+    c.req.param("token") ||
     c.req.query("token") ||
     c.req.header("x-gupshup-token") ||
     c.req.header("x-webhook-token") ||
@@ -212,6 +213,7 @@ whatsapp.get("/status", (c) => c.json({
   webhookUrls: {
     metaCloudApi: "/api/whatsapp/webhook",
     gupshup: "/api/whatsapp/gupshup",
+    gupshupWithPathToken: "/api/whatsapp/gupshup/:token",
   },
 }));
 
@@ -268,6 +270,49 @@ whatsapp.post("/webhook", async (c) => {
 });
 
 whatsapp.post("/gupshup", async (c) => {
+  if (!gupshupTokenIsValid(c)) {
+    return c.json({ ok: false, message: "Invalid Gupshup webhook token." }, 403);
+  }
+
+  const payload = await c.req.json<GupshupInboundPayload>().catch(() => ({}));
+  const incoming = extractGupshupMessage(payload);
+
+  if (!incoming) {
+    return c.json({
+      ok: true,
+      processed: [],
+      note: "Ignored non-message or unsupported Gupshup event.",
+    });
+  }
+
+  const caller = appRouter.createCaller({
+    req: c.req.raw,
+    resHeaders: new Headers(),
+  });
+
+  const complaint = await caller.grievance.createWhatsApp({
+    whatsappNumber: incoming.from,
+    citizenName: incoming.citizenName,
+    message: incoming.text,
+    attachment: incoming.attachment,
+  });
+  const reply = `${complaint.reply}\nReference: ${complaint.referenceNumber}. Please keep this number for follow-up.`;
+  const replyResult = await sendGupshupReply(incoming.from, reply);
+
+  return c.json({
+    ok: true,
+    provider: "gupshup",
+    processed: [{
+      from: incoming.from,
+      messageId: incoming.messageId,
+      referenceNumber: complaint.referenceNumber,
+      replySent: replyResult.sent,
+      note: replyResult.sent ? "Complaint registered and Gupshup reply sent." : replyResult.reason,
+    }],
+  });
+});
+
+whatsapp.post("/gupshup/:token", async (c) => {
   if (!gupshupTokenIsValid(c)) {
     return c.json({ ok: false, message: "Invalid Gupshup webhook token." }, 403);
   }
