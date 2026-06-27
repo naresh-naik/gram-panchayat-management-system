@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "../api/lib/password";
-import { getDb } from "../api/queries/connection";
+import { hashPassword } from "../server/lib/password";
+import { getDb } from "../server/queries/connection";
 import { users } from "./schema";
 
 const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();

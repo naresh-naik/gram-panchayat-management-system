@@ -20,6 +20,6 @@
       "@db/*": ["./db/*"]
     }
   },
-  "include": ["api", "contracts", "db"],
+  "include": ["api", "server", "contracts", "db"],
   "exclude": ["db/seed.ts"]
 }
