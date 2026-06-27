@@ -101,6 +101,7 @@ Webhook endpoints:
 GET  /api/whatsapp/webhook   Meta verification endpoint
 POST /api/whatsapp/webhook   Incoming WhatsApp messages
 POST /api/whatsapp/gupshup   Incoming Gupshup WhatsApp messages
+POST /api/zapier-whatsapp    Incoming Zapier WhatsApp automation payloads
 GET  /api/whatsapp/status    Local configuration status
 ```
 
@@ -110,6 +111,24 @@ Production webhook URL format:
 https://your-domain.com/api/whatsapp/webhook
 https://your-domain.com/api/whatsapp/gupshup
 https://your-domain.com/api/gupshup
+https://your-domain.com/api/zapier-whatsapp
+```
+
+Zapier webhook URL:
+
+```text
+https://panchayat-management-system.vercel.app/api/zapier-whatsapp
+```
+
+Zapier should POST JSON with any of these fields:
+
+```json
+{
+  "from": "919876543210",
+  "name": "Citizen Name",
+  "message": "No water supply in ward 4 for 3 days",
+  "ward": "Ward 4"
+}
 ```
 
 Required environment variables:
