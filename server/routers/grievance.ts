@@ -293,19 +293,40 @@ export const grievanceRouter = createRouter({
       }
 
       const db = getDb();
-      const citizen = await db.query.citizens.findFirst({
+      let citizen = await db.query.citizens.findFirst({
         where: or(
           eq(citizensTable.phone, input.whatsappNumber),
           eq(citizensTable.phone, normalizedPhone),
           eq(citizensTable.phone, localPhone),
         ),
       });
+
       if (!citizen) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "WhatsApp number is not linked with a citizen record. Please register the citizen before intake.",
+        const citizenResult = await db.insert(citizensTable).values({
+          fullName: input.citizenName?.trim() || `WhatsApp Citizen ${localPhone}`,
+          dob: new Date("1970-01-01"),
+          gender: "other",
+          category: "General",
+          phone: localPhone,
+          address: "Submitted via WhatsApp. Address verification pending.",
+          ward: input.ward?.trim() || "Unassigned",
+          occupation: "Verification pending",
+          education: "Verification pending",
+        } as typeof citizensTable.$inferInsert);
+
+        const citizenId = Number(citizenResult[0].insertId);
+        citizen = await db.query.citizens.findFirst({
+          where: eq(citizensTable.id, citizenId),
         });
+
+        if (!citizen) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Could not create a citizen intake record for this WhatsApp complaint.",
+          });
+        }
       }
+
       const result = await db.insert(grievances).values({
         citizenId: citizen.id,
         category: triage.category,

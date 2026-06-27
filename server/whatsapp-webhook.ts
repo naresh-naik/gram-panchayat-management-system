@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { HttpBindings } from "@hono/node-server";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { appRouter } from "./router";
@@ -26,6 +26,25 @@ type WhatsAppWebhookPayload = {
     id?: string;
     changes?: WhatsAppChange[];
   }>;
+};
+
+type GupshupInboundPayload = {
+  app?: string;
+  timestamp?: number;
+  version?: number;
+  type?: string;
+  payload?: {
+    id?: string;
+    source?: string;
+    type?: string;
+    payload?: Record<string, unknown>;
+    sender?: {
+      phone?: string;
+      name?: string;
+      country_code?: string;
+      dial_code?: string;
+    };
+  };
 };
 
 const whatsapp = new Hono<{ Bindings: HttpBindings }>();
@@ -77,6 +96,85 @@ async function sendWhatsAppReply(to: string, text: string) {
   return { sent: true };
 }
 
+function gupshupTokenIsValid(c: Context) {
+  if (!env.gupshupWebhookToken) return true;
+  const token =
+    c.req.query("token") ||
+    c.req.header("x-gupshup-token") ||
+    c.req.header("x-webhook-token") ||
+    "";
+  return token === env.gupshupWebhookToken;
+}
+
+function extractGupshupMessage(payload: GupshupInboundPayload) {
+  if (payload.type && payload.type !== "message") return null;
+
+  const event = payload.payload;
+  const message = event?.payload ?? {};
+  const messageType = String(event?.type ?? "text");
+  const from = normalizePhone(event?.sender?.phone || event?.source || "");
+  const citizenName = event?.sender?.name || "Citizen";
+
+  let text = "";
+  let attachment = "";
+
+  if (messageType === "text") {
+    text = String(message.text ?? "").trim();
+  } else if (messageType === "location") {
+    const latitude = String(message.latitude ?? message.lat ?? "").trim();
+    const longitude = String(message.longitude ?? message.long ?? message.lng ?? "").trim();
+    const address = String(message.address ?? message.name ?? "").trim();
+    text = `Location shared by citizen${address ? `: ${address}` : ""}${latitude && longitude ? ` (${latitude}, ${longitude})` : ""}. Please review and assign field staff.`;
+  } else {
+    const caption = String(message.caption ?? message.text ?? "").trim();
+    const url = String(message.url ?? message.link ?? "").trim();
+    const label = messageType.charAt(0).toUpperCase() + messageType.slice(1);
+    text = caption || `${label} complaint evidence received on WhatsApp. Please review the attachment and contact the citizen.`;
+    attachment = url;
+  }
+
+  if (!from || !text) return null;
+
+  return {
+    from,
+    citizenName,
+    text,
+    attachment: attachment || undefined,
+    messageId: event?.id ?? "",
+  };
+}
+
+async function sendGupshupReply(to: string, text: string) {
+  if (!env.gupshupApiKey || !env.gupshupSourceNumber || !env.gupshupAppName) {
+    return { sent: false, reason: "Gupshup credentials are not configured." };
+  }
+
+  const body = new URLSearchParams({
+    channel: "whatsapp",
+    source: env.gupshupSourceNumber,
+    destination: to,
+    "src.name": env.gupshupAppName,
+    message: JSON.stringify({ type: "text", text }),
+  });
+
+  const response = await fetch("https://api.gupshup.io/sm/api/v1/msg", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      apikey: env.gupshupApiKey,
+      api_key: env.gupshupApiKey,
+    },
+    body,
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    return { sent: false, reason: `Gupshup reply failed: ${response.status} ${details}` };
+  }
+
+  return { sent: true };
+}
+
 whatsapp.get("/webhook", (c) => {
   const mode = c.req.query("hub.mode");
   const token = c.req.query("hub.verify_token");
@@ -99,11 +197,22 @@ whatsapp.get("/webhook", (c) => {
 whatsapp.get("/status", (c) => c.json({
   ok: true,
   configured: {
-    verifyToken: Boolean(env.whatsappVerifyToken),
-    accessToken: Boolean(env.whatsappAccessToken),
-    phoneNumberId: Boolean(env.whatsappPhoneNumberId),
+    metaCloudApi: {
+      verifyToken: Boolean(env.whatsappVerifyToken),
+      accessToken: Boolean(env.whatsappAccessToken),
+      phoneNumberId: Boolean(env.whatsappPhoneNumberId),
+    },
+    gupshup: {
+      apiKey: Boolean(env.gupshupApiKey),
+      sourceNumber: Boolean(env.gupshupSourceNumber),
+      appName: Boolean(env.gupshupAppName),
+      webhookToken: Boolean(env.gupshupWebhookToken),
+    },
   },
-  webhookUrl: "/api/whatsapp/webhook",
+  webhookUrls: {
+    metaCloudApi: "/api/whatsapp/webhook",
+    gupshup: "/api/whatsapp/gupshup",
+  },
 }));
 
 whatsapp.post("/webhook", async (c) => {
@@ -156,6 +265,49 @@ whatsapp.post("/webhook", async (c) => {
   }
 
   return c.json({ ok: true, processed });
+});
+
+whatsapp.post("/gupshup", async (c) => {
+  if (!gupshupTokenIsValid(c)) {
+    return c.json({ ok: false, message: "Invalid Gupshup webhook token." }, 403);
+  }
+
+  const payload = await c.req.json<GupshupInboundPayload>().catch(() => ({}));
+  const incoming = extractGupshupMessage(payload);
+
+  if (!incoming) {
+    return c.json({
+      ok: true,
+      processed: [],
+      note: "Ignored non-message or unsupported Gupshup event.",
+    });
+  }
+
+  const caller = appRouter.createCaller({
+    req: c.req.raw,
+    resHeaders: new Headers(),
+  });
+
+  const complaint = await caller.grievance.createWhatsApp({
+    whatsappNumber: incoming.from,
+    citizenName: incoming.citizenName,
+    message: incoming.text,
+    attachment: incoming.attachment,
+  });
+  const reply = `${complaint.reply}\nReference: ${complaint.referenceNumber}. Please keep this number for follow-up.`;
+  const replyResult = await sendGupshupReply(incoming.from, reply);
+
+  return c.json({
+    ok: true,
+    provider: "gupshup",
+    processed: [{
+      from: incoming.from,
+      messageId: incoming.messageId,
+      referenceNumber: complaint.referenceNumber,
+      replySent: replyResult.sent,
+      note: replyResult.sent ? "Complaint registered and Gupshup reply sent." : replyResult.reason,
+    }],
+  });
 });
 
 export default whatsapp;

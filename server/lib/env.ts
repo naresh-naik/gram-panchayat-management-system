@@ -19,4 +19,8 @@ export const env = {
   whatsappAccessToken: process.env.WHATSAPP_ACCESS_TOKEN ?? "",
   whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? "",
   whatsappApiVersion: process.env.WHATSAPP_API_VERSION ?? "v21.0",
+  gupshupApiKey: process.env.GUPSHUP_API_KEY ?? "",
+  gupshupSourceNumber: process.env.GUPSHUP_SOURCE_NUMBER ?? "",
+  gupshupAppName: process.env.GUPSHUP_APP_NAME ?? "",
+  gupshupWebhookToken: process.env.GUPSHUP_WEBHOOK_TOKEN ?? "",
 };

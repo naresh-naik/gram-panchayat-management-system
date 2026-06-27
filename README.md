@@ -93,13 +93,14 @@ npm run dev
 
 ## Real WhatsApp Complaint Intake
 
-The backend exposes a WhatsApp Business Cloud API webhook that can receive villagers' WhatsApp messages and create complaints directly in the same grievance register used by the website.
+The backend exposes WhatsApp complaint intake webhooks that can receive villagers' WhatsApp messages and create complaints directly in the same grievance register used by the website. The app supports Meta Cloud API directly and Gupshup as an India-friendly WhatsApp Business provider.
 
 Webhook endpoints:
 
 ```text
 GET  /api/whatsapp/webhook   Meta verification endpoint
 POST /api/whatsapp/webhook   Incoming WhatsApp messages
+POST /api/whatsapp/gupshup   Incoming Gupshup WhatsApp messages
 GET  /api/whatsapp/status    Local configuration status
 ```
 
@@ -107,6 +108,7 @@ Production webhook URL format:
 
 ```text
 https://your-domain.com/api/whatsapp/webhook
+https://your-domain.com/api/whatsapp/gupshup
 ```
 
 Required environment variables:
@@ -118,10 +120,27 @@ WHATSAPP_PHONE_NUMBER_ID="meta-phone-number-id"
 WHATSAPP_API_VERSION="v21.0"
 ```
 
+Gupshup provider variables:
+
+```sh
+GUPSHUP_API_KEY="gupshup-api-key"
+GUPSHUP_SOURCE_NUMBER="registered-whatsapp-sender-number"
+GUPSHUP_APP_NAME="gupshup-app-name"
+GUPSHUP_WEBHOOK_TOKEN="choose-a-strong-random-string"
+```
+
+For Gupshup, set the callback/webhook URL in the Gupshup dashboard to:
+
+```text
+https://panchayat-management-system.vercel.app/api/whatsapp/gupshup?token=YOUR_GUPSHUP_WEBHOOK_TOKEN
+```
+
+Villagers can send a normal WhatsApp text, image, file, audio, video, or location message. Text becomes the complaint description; media/location messages are registered with the available caption, link, or location details. If the sender's number is not already in citizen records, the app creates a minimal citizen intake record so the complaint is still accepted and staff can verify the citizen later.
+
 Flow:
 
 1. A villager sends a text complaint to the official Panchayat WhatsApp Business number.
-2. Meta sends the message to `/api/whatsapp/webhook`.
+2. Meta or Gupshup sends the message to the configured webhook.
 3. The app matches the WhatsApp number to a citizen phone number, including Indian numbers sent as `91XXXXXXXXXX`.
 4. A grievance is created with source `whatsapp`, AI-style category, priority, SLA due date, and reference number.
 5. If WhatsApp credentials are configured, the villager receives an automatic reply with the complaint reference number.
