@@ -15,10 +15,8 @@ export default function Login() {
   const utils = trpc.useUtils();
   const login = trpc.auth.login.useMutation({
     onSuccess: async (user) => {
-      if (import.meta.env.DEV) {
-        localStorage.setItem("gp-demo-role", user.role);
-        localStorage.setItem("gp-demo-user", JSON.stringify(user));
-      }
+      localStorage.setItem("gp-demo-role", user.role);
+      localStorage.setItem("gp-demo-user", JSON.stringify(user));
       await utils.invalidate();
       navigate("/dashboard");
     },
@@ -119,36 +117,34 @@ export default function Login() {
             )}
           </form>
 
-          {import.meta.env.DEV && (
-            <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[var(--gp-border)]" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-3 bg-white text-[var(--gp-text-muted)]">local development roles</span>
-                </div>
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[var(--gp-border)]" />
               </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-3 bg-white text-[var(--gp-text-muted)]">demo access roles</span>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  ["admin", "Admin"],
-                  ["secretary", "Secretary"],
-                  ["monitor", "Monitor"],
-                  ["citizen", "Citizen"],
-                ].map(([role, label]) => (
-                  <Button
-                    key={role}
-                    variant="outline"
-                    onClick={() => continueAs(role as DemoRole)}
-                    className="border-[var(--gp-border)] text-[var(--gp-text)] hover:bg-[var(--gp-bg)] text-xs"
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            </>
-          )}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                ["admin", "Admin"],
+                ["secretary", "Secretary"],
+                ["monitor", "Monitor"],
+                ["citizen", "Citizen"],
+              ].map(([role, label]) => (
+                <Button
+                  key={role}
+                  variant="outline"
+                  onClick={() => continueAs(role as DemoRole)}
+                  className="border-[var(--gp-border)] text-[var(--gp-text)] hover:bg-[var(--gp-bg)] text-xs"
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </>
 
           <p className="text-center text-xs text-[var(--gp-text-muted)] mt-8">
             Role-based access keeps administrative, monitoring, and public workflows separate.

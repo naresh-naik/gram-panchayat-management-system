@@ -23,7 +23,88 @@ type ComplaintInput = {
   subcategory: string;
 };
 
+type CategoryFlow = {
+  code: number;
+  title: string;
+  backendCategory: string;
+  aliases: string[];
+  subcategories: string[];
+};
+
 let pool: MySqlPool | null = null;
+
+const complaintFlows: CategoryFlow[] = [
+  {
+    code: 1,
+    title: "Drinking Water",
+    backendCategory: "water",
+    aliases: ["water", "drinking", "pump", "borewell"],
+    subcategories: ["No water supply", "Dirty or smelly water", "Pipeline leakage", "Hand pump or borewell repair", "Low water pressure"],
+  },
+  {
+    code: 2,
+    title: "Sanitation & Drainage",
+    backendCategory: "sanitation",
+    aliases: ["sanitation", "drain", "drainage", "sewage"],
+    subcategories: ["Blocked drainage", "Sewage overflow", "Public toilet repair", "Stagnant water", "Mosquito breeding spot"],
+  },
+  {
+    code: 3,
+    title: "Garbage & Waste",
+    backendCategory: "sanitation",
+    aliases: ["garbage", "waste", "dumping"],
+    subcategories: ["Garbage not collected", "Illegal dumping", "Waste burning", "Dead animal removal", "Dustbin required"],
+  },
+  {
+    code: 4,
+    title: "Roads & Pathways",
+    backendCategory: "roads",
+    aliases: ["road", "roads", "pathway", "pothole"],
+    subcategories: ["Potholes", "Muddy road", "Broken culvert", "Road waterlogging", "Footpath repair"],
+  },
+  {
+    code: 5,
+    title: "Street Lights & Electricity",
+    backendCategory: "electricity",
+    aliases: ["light", "street light", "electricity", "power"],
+    subcategories: ["Street light not working", "New street light needed", "Unsafe electric wire", "Pole damaged", "Transformer issue"],
+  },
+  {
+    code: 6,
+    title: "Health & Mosquito Control",
+    backendCategory: "sanitation",
+    aliases: ["health", "mosquito", "fogging", "fever"],
+    subcategories: ["Mosquito fogging needed", "Fever cases in area", "Unsafe drinking water", "Health camp request", "Stray animal health risk"],
+  },
+  {
+    code: 7,
+    title: "Welfare, Ration & Pension",
+    backendCategory: "welfare",
+    aliases: ["welfare", "ration", "pension", "awas"],
+    subcategories: ["Ration card problem", "Old age pension", "Widow pension", "PM Awas issue", "Scheme benefit pending"],
+  },
+  {
+    code: 8,
+    title: "School & Anganwadi",
+    backendCategory: "welfare",
+    aliases: ["school", "anganwadi", "midday meal"],
+    subcategories: ["Anganwadi repair", "Midday meal issue", "School toilet repair", "Drinking water at school", "Child nutrition service"],
+  },
+  {
+    code: 9,
+    title: "MGNREGA & Livelihood",
+    backendCategory: "welfare",
+    aliases: ["mgnrega", "job card", "livelihood", "shg"],
+    subcategories: ["Job card issue", "Wage payment pending", "Attendance mismatch", "Work demand", "SHG support"],
+  },
+  {
+    code: 10,
+    title: "Land & Public Assets",
+    backendCategory: "land_dispute",
+    aliases: ["land", "asset", "encroachment", "pond", "community hall"],
+    subcategories: ["Public land encroachment", "Pond maintenance", "Community hall repair", "Playground issue", "Boundary dispute"],
+  },
+];
 
 function valueAt(body: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
@@ -47,6 +128,77 @@ function lineValue(text: string, labels: string[]) {
 function cleanMessageForComplaint(text: string) {
   const problem = lineValue(text, ["Problem", "Complaint", "Description", "Issue"]);
   return problem || text;
+}
+
+function mainMenuText() {
+  return [
+    "Namaste. Gram Panchayat WhatsApp complaint desk.",
+    "Reply with a category number:",
+    ...complaintFlows.map((item) => `${item.code}. ${item.title}`),
+    "",
+    "Example: reply 1 for Drinking Water.",
+  ].join("\n");
+}
+
+function categoryTemplateText(flow: CategoryFlow) {
+  return [
+    `${flow.title} selected.`,
+    "Reply with your complaint in this format:",
+    "",
+    "GP_COMPLAINT",
+    `Category: ${flow.title}`,
+    `System Category: ${flow.backendCategory}`,
+    `Subcategory: ${flow.subcategories[0]}`,
+    "Ward: Ward 1",
+    "Problem: type your exact problem here",
+    "Location/Landmark: optional",
+    "",
+    "Subcategory options:",
+    ...flow.subcategories.map((item, index) => `${index + 1}. ${item}`),
+    "",
+    `Fast format: ${flow.code} 1 Ward 1 your problem here`,
+  ].join("\n");
+}
+
+function findFlowByText(text: string) {
+  const normalized = text.trim().toLowerCase();
+  const numeric = normalized.match(/^(\d{1,2})$/)?.[1];
+  if (numeric) return complaintFlows.find((item) => item.code === Number(numeric));
+  return complaintFlows.find((item) => (
+    normalized.includes(item.title.toLowerCase()) ||
+    item.aliases.some((alias) => normalized.includes(alias))
+  ));
+}
+
+function isStartIntent(text: string) {
+  return /^(hi|hii|hello|hlo|hey|start|menu|complaint|help|gp_complaint|start gp_complaint)$/i.test(text.trim());
+}
+
+function parseFastComplaint(text: string) {
+  const match = text.trim().match(/^(\d{1,2})[\s.:-]+(\d{1,2})[\s.:-]+(ward\s*\d{1,2}|ward\s*not\s*sure|not\s*sure)[\s,:-]+(.+)$/i);
+  if (!match) return null;
+
+  const flow = complaintFlows.find((item) => item.code === Number(match[1]));
+  if (!flow) return null;
+
+  const subcategoryIndex = Number(match[2]) - 1;
+  const subcategory = flow.subcategories[subcategoryIndex] ?? flow.subcategories[0];
+  const ward = match[3]
+    .replace(/\s+/g, " ")
+    .replace(/^ward/i, "Ward")
+    .replace(/not sure/i, "not sure");
+  const problem = match[4].trim();
+
+  return {
+    message: problem,
+    ward,
+    category: flow.backendCategory,
+    subcategory,
+  };
+}
+
+function needsMoreDetails(input: ComplaintInput) {
+  return !input.message.trim() || input.message.trim().length < 8;
 }
 
 function normalizeBackendCategory(value: string, fallbackText: string) {
@@ -107,14 +259,15 @@ function parseInput(rawBody: unknown): ComplaintInput {
   const category = valueAt(merged, ["category", "Category", "systemCategory", "System Category"]);
   const parsedWard = lineValue(message, ["Ward", "Ward No", "Ward Number"]);
   const parsedCategory = lineValue(message, ["System Category", "Category"]);
+  const fastComplaint = parseFastComplaint(message);
 
   return {
     from: valueAt(merged, ["from", "phone", "sender", "source", "wa_id", "whatsapp", "mobile"]).replace(/\D/g, ""),
     name: valueAt(merged, ["name", "profile_name", "profileName", "sender_name", "contact_name"]) || "WhatsApp Citizen",
-    message: cleanMessageForComplaint(message),
-    ward: ward && ward.toLowerCase() !== "unknown" ? ward : parsedWard,
-    category: category || parsedCategory,
-    subcategory: valueAt(merged, ["subcategory", "Subcategory", "sub_category"]) || lineValue(message, ["Subcategory", "Sub-category"]),
+    message: fastComplaint?.message ?? cleanMessageForComplaint(message),
+    ward: fastComplaint?.ward ?? (ward && ward.toLowerCase() !== "unknown" ? ward : parsedWard),
+    category: fastComplaint?.category ?? (category || parsedCategory),
+    subcategory: fastComplaint?.subcategory ?? (valueAt(merged, ["subcategory", "Subcategory", "sub_category"]) || lineValue(message, ["Subcategory", "Sub-category"])),
   };
 }
 
@@ -125,7 +278,7 @@ function classifyComplaint(input: ComplaintInput) {
 function detectPriority(message: string) {
   const lower = message.toLowerCase();
   if (/(emergency|danger|accident|fire|flood|urgent|severe)/.test(lower)) return "critical";
-  if (/(no water|blocked|broken|unsafe|three days|3 days|week)/.test(lower)) return "high";
+  if (/(no water|blocked|broken|not working|unsafe|three days|3 days|week)/.test(lower)) return "high";
   return "medium";
 }
 
@@ -202,6 +355,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       provider: "zapier",
       message: "Zapier WhatsApp complaint webhook is reachable.",
       expectedFields: ["from", "name", "message", "ward"],
+      startMessage: "START GP_COMPLAINT",
     });
     return;
   }
@@ -212,6 +366,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const input = parseInput(req.body);
+  const rawText = input.message.trim();
+
+  if (isStartIntent(rawText)) {
+    res.status(200).json({
+      ok: true,
+      provider: "zapier",
+      received: true,
+      from: input.from,
+      name: input.name,
+      action: "menu",
+      replyText: mainMenuText(),
+    });
+    return;
+  }
+
+  const selectedFlow = findFlowByText(rawText);
+  if (selectedFlow && /^\d{1,2}$/.test(rawText)) {
+    res.status(200).json({
+      ok: true,
+      provider: "zapier",
+      received: true,
+      from: input.from,
+      name: input.name,
+      action: "category_template",
+      category: selectedFlow.backendCategory,
+      replyText: categoryTemplateText(selectedFlow),
+    });
+    return;
+  }
+
+  if (needsMoreDetails(input)) {
+    res.status(200).json({
+      ok: true,
+      provider: "zapier",
+      received: true,
+      from: input.from,
+      name: input.name,
+      action: "need_details",
+      replyText: [
+        "Please send more details so we can register your complaint.",
+        "",
+        mainMenuText(),
+      ].join("\n"),
+    });
+    return;
+  }
+
   const referenceNumber = `GRV-${Date.now().toString(36).toUpperCase()}`;
   const category = classifyComplaint(input);
   const priority = detectPriority(input.message);

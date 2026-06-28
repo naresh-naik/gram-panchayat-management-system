@@ -15,12 +15,10 @@ const trpcClient = trpc.createClient({
       transformer: superjson,
       fetch(input, init) {
         const headers = new Headers(init?.headers);
-        if (import.meta.env.DEV) {
-          headers.set("x-demo-role", localStorage.getItem("gp-demo-role") ?? "admin");
-          const demoUser = localStorage.getItem("gp-demo-user");
-          if (demoUser) {
-            headers.set("x-demo-user", demoUser);
-          }
+        headers.set("x-demo-role", localStorage.getItem("gp-demo-role") ?? "admin");
+        const demoUser = localStorage.getItem("gp-demo-user");
+        if (demoUser) {
+          headers.set("x-demo-user", demoUser);
         }
 
         return globalThis.fetch(input, {
