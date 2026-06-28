@@ -230,6 +230,13 @@ function getSlaDueAt(priority: string) {
   return addHours(120);
 }
 
+function getSlaText(priority: string) {
+  if (priority === "critical") return "Immediate escalation has been created. Expected first action: within 12 hours.";
+  if (priority === "high") return "Expected first action: within 24 hours.";
+  if (priority === "medium") return "Expected first action: within 3 working days.";
+  return "Expected first action: within 5 working days.";
+}
+
 async function getPool() {
   if (!process.env.DATABASE_URL) return null;
   if (!pool) {
@@ -449,6 +456,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     priority,
     stored: storage.stored,
     storageNote: storage.note,
-    replyText: `Your complaint has been received. Reference number: ${referenceNumber}. Category: ${category}. Ward: ${input.ward || "Unassigned"}. Priority: ${priority}.`,
+    replyText: [
+      "Your complaint has been received by the Gram Panchayat.",
+      `Reference number: ${referenceNumber}.`,
+      `Category: ${category}. Ward: ${input.ward || "Unassigned"}. Priority: ${priority}.`,
+      getSlaText(priority),
+      "You will receive updates here after the Panchayat staff reviews it.",
+    ].join("\n"),
   });
 }
