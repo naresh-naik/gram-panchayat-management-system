@@ -95,6 +95,16 @@ npm run dev
 
 The backend exposes WhatsApp complaint intake webhooks that can receive villagers' WhatsApp messages and create complaints directly in the same grievance register used by the website. The app supports Meta Cloud API directly and Gupshup as an India-friendly WhatsApp Business provider.
 
+The public citizen launcher is available at:
+
+```text
+/whatsapp-grievance
+```
+
+It opens WhatsApp with a structured message for the connected Panchayat WhatsApp Business number. Configure the number with `VITE_WHATSAPP_BUSINESS_NUMBER`; if unset, the demo uses `919515019840`.
+
+The Zapier endpoint continues to acknowledge complaints even when no production database is configured. When `DATABASE_URL` is set, it also creates or matches a citizen record and stores the complaint in the grievance register.
+
 Webhook endpoints:
 
 ```text
@@ -129,6 +139,18 @@ Zapier should POST JSON with any of these fields:
   "message": "No water supply in ward 4 for 3 days",
   "ward": "Ward 4"
 }
+```
+
+The website-generated WhatsApp message is intentionally structured so Zapier can pass the full text body and the webhook can still extract category, subcategory, ward, and problem details:
+
+```text
+GP_COMPLAINT
+Category: Drinking Water
+System Category: water
+Subcategory: No water supply
+Ward: Ward 4
+Problem: No drinking water supply for three days near the school.
+Location/Landmark: Government school road
 ```
 
 Required environment variables:

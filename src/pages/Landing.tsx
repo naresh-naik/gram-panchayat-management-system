@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Landmark, Users, FileText, Shield, TrendingUp, MessageSquare, Calendar, PieChart,
-  Quote
+  Quote, MessageCircle
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -14,6 +14,7 @@ const services = [
   { icon: Shield, title: "Welfare Schemes", description: "Track and manage government welfare scheme enrollments.", path: "/schemes" },
   { icon: FileText, title: "Property Tax", description: "Efficient property tax assessment, collection, and tracking.", path: "/finances" },
   { icon: Calendar, title: "Meetings", description: "Schedule Gram Sabha meetings and track attendance.", path: "/meetings" },
+  { icon: MessageCircle, title: "WhatsApp Grievance", description: "Guide citizens to file structured complaints through WhatsApp.", path: "/whatsapp-grievance" },
   { icon: MessageSquare, title: "Grievances", description: "Public grievance filing and tracking system.", path: "/grievances" },
   { icon: TrendingUp, title: "Reports & Analytics", description: "Comprehensive analytics for government monitoring.", path: "/reports" },
   { icon: PieChart, title: "Financial Management", description: "Budget tracking, expenditure monitoring, and fund management.", path: "/finances" },
@@ -74,6 +75,12 @@ export default function Landing() {
                 Access village records, welfare schemes, and government services — all in one unified platform designed for transparency and efficiency.
               </p>
               <div className="flex flex-wrap gap-4">
+                <Button
+                  onClick={() => navigate("/whatsapp-grievance")}
+                  className="bg-green-700 hover:bg-green-800 text-white px-8 py-6 text-sm font-semibold rounded-lg"
+                >
+                  WhatsApp Complaint
+                </Button>
                 <Button
                   onClick={() => navigate("/login")}
                   className="bg-[var(--gp-accent)] hover:bg-[var(--gp-accent-hover)] text-white px-8 py-6 text-sm font-semibold rounded-lg"

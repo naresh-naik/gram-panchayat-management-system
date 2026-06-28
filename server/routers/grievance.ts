@@ -64,12 +64,12 @@ function summarize(text: string) {
 function classifyComplaint(text: string): { category: GrievanceCategory; priority: GrievancePriority; aiCategory: string; slaDueAt: Date } {
   const value = text.toLowerCase();
   const keywordMap: Array<{ category: GrievanceCategory; label: string; words: string[] }> = [
-    { category: "sanitation", label: "Sanitation", words: ["garbage", "drain", "drainage", "sewage", "waste", "toilet", "cleaning", "mosquito"] },
-    { category: "water", label: "Water supply", words: ["water", "tap", "pump", "borewell", "pipeline", "drinking"] },
-    { category: "roads", label: "Road maintenance", words: ["road", "pothole", "street", "bridge", "drain cover"] },
-    { category: "electricity", label: "Electricity", words: ["power", "electric", "light", "transformer", "pole", "streetlight"] },
-    { category: "land_dispute", label: "Land or property dispute", words: ["land", "boundary", "encroach", "property", "survey"] },
-    { category: "welfare", label: "Welfare scheme", words: ["pension", "ration", "scheme", "benefit", "awas", "job card", "mgnrega"] },
+    { category: "sanitation", label: "Sanitation", words: ["garbage", "drain", "drainage", "sewage", "waste", "toilet", "cleaning", "mosquito", "fogging", "stagnant", "health"] },
+    { category: "water", label: "Water supply", words: ["water", "tap", "pump", "borewell", "pipeline", "drinking", "pressure", "leakage"] },
+    { category: "roads", label: "Road maintenance", words: ["road", "pothole", "pathway", "street", "bridge", "culvert", "muddy", "waterlogging", "drain cover"] },
+    { category: "electricity", label: "Electricity", words: ["power", "electric", "light", "wire", "transformer", "pole", "streetlight"] },
+    { category: "land_dispute", label: "Land or public asset", words: ["land", "boundary", "encroach", "property", "survey", "pond", "community hall", "playground", "public asset"] },
+    { category: "welfare", label: "Welfare scheme", words: ["pension", "ration", "scheme", "benefit", "awas", "job card", "mgnrega", "school", "anganwadi", "livelihood", "shg", "midday meal"] },
   ];
   const matched = keywordMap.find((item) => item.words.some((word) => value.includes(word)));
   const urgentWords = ["emergency", "danger", "accident", "hospital", "fire", "contaminated", "flood", "severe", "urgent"];

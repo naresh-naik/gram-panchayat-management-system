@@ -37,6 +37,7 @@ export default function Navbar() {
     { label: "Smart Services", path: "/smart-services", icon: Sparkles, roles: ["admin", "secretary", "citizen", "monitor"] },
     { label: "Finances", path: "/finances", icon: PieChart, roles: ["admin", "secretary", "monitor"] },
     { label: "Meetings", path: "/meetings", icon: Calendar, roles: ["admin", "secretary", "citizen", "monitor"] },
+    { label: "WhatsApp", path: "/whatsapp-grievance", icon: MessageSquare, roles: ["admin", "secretary", "citizen", "monitor"] },
     { label: "Reports", path: "/reports", icon: Users, roles: ["admin", "monitor"] },
     { label: "Grievances", path: "/grievances", icon: MessageSquare, roles: ["admin", "secretary", "citizen"] },
     { label: "Users", path: "/users", icon: UserCog, roles: ["admin"] },
@@ -153,6 +154,13 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
+                  onClick={() => navigate("/whatsapp-grievance")}
+                  className="hidden sm:inline-flex text-green-700 hover:text-green-800"
+                >
+                  WhatsApp Complaint
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => navigate("/login")}
                   className="text-[var(--gp-text-secondary)]"
                 >
@@ -173,6 +181,7 @@ export default function Navbar() {
                   <SheetContent side="right">
                     <div className="flex flex-col gap-4 mt-8">
                       <Link to="/" className="text-lg font-medium text-[var(--gp-primary)]">Home</Link>
+                      <Link to="/whatsapp-grievance" className="text-lg font-medium text-green-700">WhatsApp Complaint</Link>
                       <Link to="/login" className="text-lg font-medium text-[var(--gp-text-secondary)]">Login</Link>
                       <Link to="/register" className="text-lg font-medium text-[var(--gp-text-secondary)]">Citizen Registration</Link>
                     </div>

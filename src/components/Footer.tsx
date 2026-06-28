@@ -12,6 +12,7 @@ const quickLinks = [
 const serviceLinks = [
   { label: "Birth Certificate", path: "/records" },
   { label: "Property Tax", path: "/finances" },
+  { label: "WhatsApp Grievance", path: "/whatsapp-grievance" },
   { label: "Grievance", path: "/grievances" },
   { label: "RTI", path: "/grievances?category=others" },
 ];

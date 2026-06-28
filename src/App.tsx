@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UserManagement from "./pages/UserManagement";
 import SmartServices from "./pages/SmartServices";
+import WhatsAppGrievance from "./pages/WhatsAppGrievance";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/whatsapp-grievance" element={<WhatsAppGrievance />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/records" element={<ProtectedRoute roles={["admin", "secretary"]}><Records /></ProtectedRoute>} />
       <Route path="/schemes" element={<ProtectedRoute><Schemes /></ProtectedRoute>} />
