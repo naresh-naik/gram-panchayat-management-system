@@ -1,8 +1,10 @@
 import "dotenv/config";
 
+const effectiveDemoMode = process.env.DEMO_MODE === "true" || !process.env.DATABASE_URL;
+
 function required(name: string): string {
   const value = process.env[name];
-  if (!value && process.env.NODE_ENV === "production" && process.env.DEMO_MODE !== "true") {
+  if (!value && process.env.NODE_ENV === "production" && !effectiveDemoMode) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value ?? "";
@@ -10,9 +12,9 @@ function required(name: string): string {
 
 export const env = {
   appId: required("APP_ID"),
-  appSecret: required("APP_SECRET"),
+  appSecret: required("APP_SECRET") || "demo-preview-session-secret",
   isProduction: process.env.NODE_ENV === "production",
-  demoMode: process.env.DEMO_MODE === "true",
+  demoMode: effectiveDemoMode,
   databaseUrl: required("DATABASE_URL"),
   ownerUnionId: process.env.OWNER_UNION_ID ?? "",
   whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? "",
